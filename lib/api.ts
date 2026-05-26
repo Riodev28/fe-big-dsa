@@ -1,4 +1,4 @@
-import { BigOAiResult } from '@/types/dto';
+import { SpatialAiResult, TemporalAiResult } from '@/types/dto';
 import { TemporalAnalysisPayload } from '@/types/request'
 import axios from 'axios';
 
@@ -17,6 +17,10 @@ async function post<T>(
   return data;
 }
 
-export function analyzeTemporalComplexity({code, explain_ai}: TemporalAnalysisPayload): Promise<BigOAiResult> {
-  return post<BigOAiResult>('/analyze/temporal', {code, explain_ai});
+export function analyzeTemporalComplexity({code, explain_ai}: TemporalAnalysisPayload): Promise<TemporalAiResult> {
+  return post<TemporalAiResult>('/analyze/temporal', {code, explain_ai});
+}
+
+export function analyzeSpatialComplexity({code, explain_ai}: TemporalAnalysisPayload): Promise<SpatialAiResult> {
+  return post<SpatialAiResult>('/analyze/spatial', {code, explain_ai});
 }
