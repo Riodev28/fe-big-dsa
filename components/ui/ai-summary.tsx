@@ -20,7 +20,7 @@ function parseSections(text: string): Section[] {
   return sections;
 }
 
-const AISummary = ({ summary }: { summary?: string }) => {
+const AISummary = ({ summary, title }: { summary?: string, title: string}) => {
   const sections = summary ? parseSections(summary) : [];
 
   return (
@@ -28,7 +28,7 @@ const AISummary = ({ summary }: { summary?: string }) => {
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-3.5 w-3.5 text-violet-400" />
         <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-          AI Summary
+          { title }
         </p>
       </div>
 

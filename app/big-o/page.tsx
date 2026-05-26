@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import {
+  analyzeSpatialComplexity,
   analyzeTemporalComplexity,
 } from '@/lib/api';
 import CodeEditor from '@/components/ui/code-editor';
@@ -10,8 +11,8 @@ import ComplexityDisplay from '@/components/ui/complexity-display';
 import NotationChart from '@/components/ui/notation-chart';
 import AISummary from '@/components/ui/ai-summary';
 import EditorHeader from '@/components/ui/code-editor-header';
-import { BigOAiResult } from '@/types/dto';
-import { TemporalAnalysisPayload } from '@/types/request';
+import { SpatialAiResult, TemporalAiResult } from '@/types/dto';
+import { SpatialAnalysisPayload, TemporalAnalysisPayload } from '@/types/request';
 
 const EXAMPLE_CODE = `def twoSum(nums, target):
     map = {}
@@ -28,16 +29,19 @@ const EXAMPLE_CODE = `def twoSum(nums, target):
 const BigOPage = () => {
   const [code, setCode] = useState(EXAMPLE_CODE);
   const [explainAI, setAiExplain] = useState<boolean>(false)
-  const [result, setResult] = useState<BigOAiResult>();
+  const [temporalResult, setTemporalResult] = useState<TemporalAiResult>();
+  const [spatialResult, setSpatialResult] = useState<SpatialAiResult>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function runAnalysis() {
     setError(null);
-    setResult(undefined);
+    setTemporalResult(undefined);
+    setSpatialResult(undefined);
     setLoading(true);
     try {
-        setResult(await analyzeTemporalComplexity({code, explain_ai: explainAI} as TemporalAnalysisPayload));
+        setTemporalResult(await analyzeTemporalComplexity({code, explain_ai: explainAI} as TemporalAnalysisPayload));
+        setSpatialResult(await analyzeSpatialComplexity({code, explain_ai: explainAI} as SpatialAnalysisPayload))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -49,9 +53,9 @@ const BigOPage = () => {
     setAiExplain(!explainAI)
   }
 
-  const timeComplexity = result?.analysis.time_complexity ?? '—';
+  const timeComplexity = temporalResult?.analysis.time_complexity ?? '—';
 
-  /* const spaceComplexity = result?.analysis.space_complexity ?? '—'; */
+  const spaceComplexity = spatialResult?.analysis.space_complexity ?? '—';
 
   return (
     <div className="flex h-full flex-col overflow-y-auto overflow-x-hidden bg-zinc-950 text-zinc-100 lg:flex-row lg:overflow-hidden flex-1 gap-4 p-4">
@@ -77,13 +81,14 @@ const BigOPage = () => {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
           <ComplexityDisplay
             complexity={timeComplexity}
-            space={"O(1)"} /* TODO: change hard code (service not exists yet) */
+            space={spaceComplexity}
           />
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
           <NotationChart complexity={timeComplexity} />
         </div>
-        <AISummary summary={result?.ai?.temporal_explanation} />
+        <AISummary summary={temporalResult?.ai?.temporal_explanation} title='Temporal AI Summary'/>
+        <AISummary summary={spatialResult?.ai?.spatial_explanation} title='Spatial AI Summary'/>
       </div>
     </div>
   );
