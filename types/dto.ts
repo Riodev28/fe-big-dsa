@@ -7,6 +7,12 @@ export interface SpatialAiResult {
   analysis: SpatialComplexityAnalysis
   ai: SpatialAI
 }
+
+export interface AuthResult {
+  access_token: string
+  token_type: string
+}
+
 export interface BigOAiResult {
   time_analysis: TimeComplexityAnalysis
   spatial_analysis: SpatialComplexityAnalysis

@@ -14,16 +14,19 @@ import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import UserDialog from './user-dialog';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
   { icon: FlaskConical, label: 'Big-O Analyzer', href: '/big-o' },
 ];
 
-const Sidebar = () => {
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  
   const pathName = usePathname();
 
   useEffect(() => {
@@ -111,6 +114,7 @@ const Sidebar = () => {
         <Separator className="mb-4 bg-zinc-800" />
         <div className="flex flex-col gap-1">
           <button
+            onClick={() => setUserDialogOpen(true)}
             title={!mobile && collapsed ? 'Profile' : undefined}
             className={`flex items-center rounded-md px-2.5 py-2 text-sm text-zinc-500 transition-colors border border-transparent hover:border-zinc-800 hover:text-zinc-300 hover:cursor-pointer ${
               !mobile && collapsed ? 'justify-center' : 'gap-2.5'
@@ -121,6 +125,8 @@ const Sidebar = () => {
           </button>
         </div>
       </div>
+
+      <UserDialog open={userDialogOpen} onOpenChange={setUserDialogOpen} />
     </>
   );
 
@@ -167,5 +173,3 @@ const Sidebar = () => {
     </aside>
   );
 };
-
-export default Sidebar;

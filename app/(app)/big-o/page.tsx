@@ -26,7 +26,8 @@ const EXAMPLE_CODE = `def twoSum(nums, target):
         map[value] = n
 `;
 
-const BigOPage = () => {
+
+export default function BigOPage () {
   const [code, setCode] = useState(EXAMPLE_CODE);
   const [explainAI, setAiExplain] = useState<boolean>(false)
   const [temporalResult, setTemporalResult] = useState<TemporalAiResult>();
@@ -93,5 +94,3 @@ const BigOPage = () => {
     </div>
   );
 };
-
-export default BigOPage;

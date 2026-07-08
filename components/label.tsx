@@ -1,14 +1,16 @@
 import { cn } from '@/lib/utils';
-import { FC } from 'react';
 
-interface LabelProps {
-  children: React.ReactNode;
-  className?: string;
-}
-const Label: FC<LabelProps> = ({ children, className }) => {
+function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
-    <label className={cn('font-bold text-lg', className)}>{children}</label>
+    <label
+      data-slot="label"
+      className={cn(
+        'text-sm leading-none font-medium select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
+        className
+      )}
+      {...props}
+    />
   );
-};
+}
 
 export default Label;
