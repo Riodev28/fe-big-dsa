@@ -9,7 +9,7 @@ import CodeEditor from '@/components/ui/code-editor';
 import AnalyzeButton from '@/components/ui/analyze-button';
 import ComplexityDisplay from '@/components/ui/complexity-display';
 import NotationChart from '@/components/ui/notation-chart';
-import AISummary from '@/components/ui/ai-summary';
+import AISummaryGroup from '@/components/ui/ai-summary-group';
 import EditorHeader from '@/components/ui/code-editor-header';
 import { SpatialAiResult, TemporalAiResult } from '@/types/dto';
 import { SpatialAnalysisPayload, TemporalAnalysisPayload } from '@/types/request';
@@ -88,8 +88,12 @@ export default function BigOPage () {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
           <NotationChart complexity={timeComplexity} />
         </div>
-        <AISummary summary={temporalResult?.ai?.temporal_explanation} title='Temporal AI Summary'/>
-        <AISummary summary={spatialResult?.ai?.spatial_explanation} title='Spatial AI Summary'/>
+        <AISummaryGroup
+          temporal={temporalResult?.ai?.temporal_explanation}
+          temporalTitle="Temporal AI Summary"
+          spatial={spatialResult?.ai?.spatial_explanation}
+          spatialTitle="Spatial AI Summary"
+        />
       </div>
     </div>
   );
