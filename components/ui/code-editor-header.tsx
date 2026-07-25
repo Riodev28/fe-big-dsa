@@ -3,7 +3,7 @@ import { Badge } from './badge';
 import { Separator } from './separator';
 
 const EditorHeader: FC<{ filename?: string }> = ({
-  filename = 'complexity_analyzer.ts',
+  filename = 'complexity_analyzer.py',
 }) => {
   return (
     <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-2.5">
