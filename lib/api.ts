@@ -1,5 +1,5 @@
-import { AuthResult, SpatialAiResult, TemporalAiResult } from '@/types/dto';
-import { LoginPayload, RegisterPayload, TemporalAnalysisPayload, UserPayload } from '@/types/request'
+import { AuthResult, FileResult, SpatialAiResult, TemporalAiResult } from '@/types/dto';
+import { LoginPayload, RegisterPayload, SaveFilePayload, TemporalAnalysisPayload, UpdateFilePayload, UserPayload } from '@/types/request'
 import axios from 'axios';
 import { getAuthToken } from '@/lib/auth';
 
@@ -26,6 +26,15 @@ async function post<T>(
   return data;
 }
 
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const { data } = await api.put<T>(path, body);
+  return data;
+}
+
+async function del(path: string): Promise<void> {
+  await api.delete(path);
+}
+
 async function get<T>(path: string): Promise<T> {
   const { data } = await api.get<T>(path);
   return data;
@@ -49,4 +58,24 @@ export function registerUser(payload: RegisterPayload): Promise<AuthResult> {
 
 export function me(): Promise<UserPayload> {
   return get<UserPayload>('/me');
+}
+
+export function getFiles(): Promise<FileResult[]> {
+  return get<FileResult[]>('/files');
+}
+
+export function getFile(id: string): Promise<FileResult> {
+  return get<FileResult>(`/file/${encodeURIComponent(id)}`);
+}
+
+export function saveFile(payload: SaveFilePayload): Promise<FileResult> {
+  return post<FileResult>('/file', payload);
+}
+
+export function updateFile(id: string, payload: UpdateFilePayload): Promise<FileResult> {
+  return put<FileResult>(`/file/${encodeURIComponent(id)}`, payload);
+}
+
+export function deleteFile(id: string): Promise<void> {
+  return del(`/file/${encodeURIComponent(id)}`);
 }

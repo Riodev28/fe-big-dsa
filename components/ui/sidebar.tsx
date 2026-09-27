@@ -10,11 +10,12 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import GuardedLink from '@/components/guarded-link';
 import UserDialog from './user-dialog';
+import SidebarFiles from './sidebar-files';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
@@ -90,7 +91,7 @@ export default function Sidebar() {
         {NAV_ITEMS.map(({ icon: Icon, label, href }) => {
           const isActive = pathName === href;
           return (
-            <Link
+            <GuardedLink
               href={href}
               key={label}
               title={!mobile && collapsed ? label : undefined}
@@ -104,13 +105,23 @@ export default function Sidebar() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {(mobile || !collapsed) && label}
-            </Link>
+            </GuardedLink>
           );
         })}
       </nav>
 
+      <Separator className="my-4 bg-zinc-800" />
+      {/* useSearchParams (active file) needs a Suspense boundary during prerender. */}
+      <Suspense>
+        <SidebarFiles
+          collapsed={!mobile && collapsed}
+          className="flex-1"
+          onNavigate={mobile ? () => setMobileOpen(false) : undefined}
+        />
+      </Suspense>
+
       {/* Bottom */}
-      <div className="mt-auto">
+      <div className="mt-auto pt-4">
         <Separator className="mb-4 bg-zinc-800" />
         <div className="flex flex-col gap-1">
           <button

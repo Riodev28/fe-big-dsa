@@ -21,3 +21,10 @@ export interface UserPayload {
     username: string;
     email: string;
 }
+
+export interface SaveFilePayload {
+    title: string;
+    content: string;
+}
+
+export type UpdateFilePayload = SaveFilePayload;

@@ -13,6 +13,21 @@ export interface AuthResult {
   token_type: string
 }
 
+export interface UserResult {
+  id: string | null
+  username: string
+  email: string
+}
+
+export interface FileResult {
+  id: string | null
+  title: string
+  content: string
+  user: UserResult
+  created_at: string
+  updated_at: string | null
+}
+
 export interface BigOAiResult {
   time_analysis: TimeComplexityAnalysis
   spatial_analysis: SpatialComplexityAnalysis

@@ -1,100 +1,13 @@
-'use client';
+import BigOAnalyzer from '@/components/big-o-analyzer';
 
-import { useState } from 'react';
-import {
-  analyzeSpatialComplexity,
-  analyzeTemporalComplexity,
-} from '@/lib/api';
-import CodeEditor from '@/components/ui/code-editor';
-import AnalyzeButton from '@/components/ui/analyze-button';
-import ComplexityDisplay from '@/components/ui/complexity-display';
-import NotationChart from '@/components/ui/notation-chart';
-import AISummaryGroup from '@/components/ui/ai-summary-group';
-import EditorHeader from '@/components/ui/code-editor-header';
-import { SpatialAiResult, TemporalAiResult } from '@/types/dto';
-import { SpatialAnalysisPayload, TemporalAnalysisPayload } from '@/types/request';
+interface BigOPageProps {
+  searchParams: Promise<{ file?: string | string[] }>;
+}
 
-const EXAMPLE_CODE = `def twoSum(nums, target):
-    map = {}
+export default async function BigOPage({ searchParams }: BigOPageProps) {
+  const { file } = await searchParams;
+  const fileId = typeof file === 'string' ? file : undefined;
 
-    for n, value in enumerate(nums):
-        complement = target - value
-
-        if complement in map:
-            return [map[complement], n]
-
-        map[value] = n
-`;
-
-
-export default function BigOPage () {
-  const [code, setCode] = useState(EXAMPLE_CODE);
-  const [explainAI, setAiExplain] = useState<boolean>(false)
-  const [temporalResult, setTemporalResult] = useState<TemporalAiResult>();
-  const [spatialResult, setSpatialResult] = useState<SpatialAiResult>();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function runAnalysis() {
-    setError(null);
-    setTemporalResult(undefined);
-    setSpatialResult(undefined);
-    setLoading(true);
-    try {
-        setTemporalResult(await analyzeTemporalComplexity({code, explain_ai: explainAI} as TemporalAnalysisPayload));
-        setSpatialResult(await analyzeSpatialComplexity({code, explain_ai: explainAI} as SpatialAnalysisPayload))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const toggleAI = () => {
-    setAiExplain(!explainAI)
-  }
-
-  const timeComplexity = temporalResult?.analysis.time_complexity ?? '—';
-
-  const spaceComplexity = spatialResult?.analysis.space_complexity ?? '—';
-
-  return (
-    <div className="flex h-full flex-col overflow-y-auto overflow-x-hidden bg-zinc-950 text-zinc-100 lg:flex-row lg:overflow-hidden flex-1 gap-4 p-4">
-      <div className="flex flex-1 flex-col lg:overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 min-h-100">
-        <EditorHeader />
-        <CodeEditor value={code} onChange={setCode} />
-        <AnalyzeButton
-          loading={loading}
-          analyze={() => runAnalysis()}
-          toggleAI={() => toggleAI()}
-          isAIActive={explainAI}
-        />
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
-      {/* Right panel */}
-      <div className="flex w-full lg:w-72 flex-col gap-4 lg:overflow-y-auto">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <ComplexityDisplay
-            complexity={timeComplexity}
-            space={spaceComplexity}
-          />
-        </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <NotationChart complexity={timeComplexity} />
-        </div>
-        <AISummaryGroup
-          temporal={temporalResult?.ai?.temporal_explanation}
-          temporalTitle="Temporal AI Summary"
-          spatial={spatialResult?.ai?.spatial_explanation}
-          spatialTitle="Spatial AI Summary"
-        />
-      </div>
-    </div>
-  );
-};
+  // Keying by file id remounts the analyzer, so switching files never leaks editor or analysis state.
+  return <BigOAnalyzer key={fileId ?? 'new'} fileId={fileId} />;
+}
