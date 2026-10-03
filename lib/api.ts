@@ -1,19 +1,120 @@
 import { AuthResult, FileResult, SpatialAiResult, TemporalAiResult } from '@/types/dto';
 import { LoginPayload, RegisterPayload, SaveFilePayload, TemporalAnalysisPayload, UpdateFilePayload, UserPayload } from '@/types/request'
-import axios from 'axios';
-import { getAuthToken } from '@/lib/auth';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
+  // Required so the httpOnly refresh_token cookie is stored on login and sent to /refresh
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const token = getAuthToken();
+// Endpoints whose 401 means "bad credentials", not "access token expired"
+const AUTH_PATHS = ['/login', '/register', '/refresh', '/logout'];
+
+// Refresh this long before the access token actually expires, to absorb clock skew and latency
+const EXPIRY_MARGIN_MS = 30_000;
+
+type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+
+let refreshPromise: Promise<string> | null = null;
+
+function isAuthPath(url: string | undefined): boolean {
+  return AUTH_PATHS.some((path) => url?.startsWith(path));
+}
+
+function isTokenExpiring(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' && payload.exp * 1000 - EXPIRY_MARGIN_MS <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
+function endSession() {
+  clearAuthToken();
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+    window.location.href = '/auth/login';
+  }
+}
+
+api.interceptors.request.use(async (config: RetryableConfig) => {
+  let token = getAuthToken();
+
+  // Proactively refresh an expired access token instead of waiting for a 401
+  if (token && !isAuthPath(config.url) && isTokenExpiring(token)) {
+    try {
+      token = await refreshAccessToken();
+    } catch {
+      // Session is over; send the request anonymously so public endpoints still work.
+      // If the endpoint requires auth, the 401 handler ends the session without refreshing again.
+      clearAuthToken();
+      token = null;
+      config._retry = true;
+    }
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as RetryableConfig | undefined;
+
+    if (error.response?.status !== 401 || !original || isAuthPath(original.url)) {
+      return Promise.reject(error);
+    }
+    if (original._retry) {
+      endSession();
+      return Promise.reject(error);
+    }
+    original._retry = true;
+
+    try {
+      const token = await refreshAccessToken();
+      original.headers.Authorization = `Bearer ${token}`;
+      return api(original);
+    } catch {
+      endSession();
+      return Promise.reject(error);
+    }
+  }
+);
+
+// Serializes refreshes across browser tabs (the access token in localStorage is shared by all of them)
+function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    return navigator.locks.request('bigdsa-token-refresh', callback) as Promise<T>;
+  }
+  return callback();
+}
+
+// Only one /refresh may ever use a given cookie: the backend rotates the refresh token
+// and treats reuse of a rotated one as theft, revoking every session of the user.
+// Concurrent calls in this tab share one promise, and other tabs wait on the lock.
+export function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    const staleToken = getAuthToken();
+    refreshPromise = withRefreshLock(async () => {
+      // Another tab may have refreshed while we waited for the lock; reuse its token
+      const current = getAuthToken();
+      if (current && current !== staleToken && !isTokenExpiring(current)) {
+        return current;
+      }
+      const { data } = await api.post<AuthResult>('/refresh');
+      setAuthToken(data.access_token);
+      return data.access_token;
+    }).finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
 
 async function post<T>(
   path: string,
@@ -54,6 +155,10 @@ export function login(payload: LoginPayload): Promise<AuthResult> {
 
 export function registerUser(payload: RegisterPayload): Promise<AuthResult> {
   return post<AuthResult>('/register', payload);
+}
+
+export function logout(): Promise<void> {
+  return post<void>('/logout', null);
 }
 
 export function me(): Promise<UserPayload> {

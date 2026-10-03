@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { clearAuthToken, getApiErrorMessage } from '@/lib/auth';
-import { me as fetchMe } from '@/lib/api';
+import { me as fetchMe, logout } from '@/lib/api';
 import { UserPayload } from '@/types/request';
 import { useEffect, useState } from 'react';
 
@@ -28,7 +28,13 @@ export default function UserDialog({ open, onOpenChange }: UserDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      // Revokes the refresh token server-side and clears its cookie
+      await logout();
+    } catch {
+      // Log out locally even if the server call fails
+    }
     clearAuthToken();
     onOpenChange(false);
     router.push('/auth/login');
