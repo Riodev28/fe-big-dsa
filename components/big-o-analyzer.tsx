@@ -23,10 +23,20 @@ import ErrorAlert from '@/components/ui/error-alert';
 import { Button } from '@/components/ui/button';
 import { useFiles } from '@/components/files-provider';
 import { useUnsavedChangesGuard } from '@/components/unsaved-changes-provider';
-import { SpatialAiResult, TemporalAiResult } from '@/types/dto';
+import { FileResult, SpatialAiResult, TemporalAiResult } from '@/types/dto';
 import { SpatialAnalysisPayload, TemporalAnalysisPayload } from '@/types/request';
 
-const EXAMPLE_CODE = `def twoSum(nums, target):
+interface SavedFile {
+  title: string;
+  content: string;
+  algorithmName: string | null;
+}
+
+function toSavedFile(file: FileResult): SavedFile {
+  return { title: file.title, content: file.content, algorithmName: file.algorithm_name };
+}
+
+const EXAMPLE_CODE = `def two_sum(nums, target):
     map = {}
 
     for n, value in enumerate(nums):
@@ -55,7 +65,7 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
   const [fileLoading, setFileLoading] = useState(Boolean(fileId));
   const [fileError, setFileError] = useState<string | null>(null);
   // Last persisted version of the opened file, used to detect unsaved changes.
-  const [savedFile, setSavedFile] = useState<{ title: string; content: string } | null>(null);
+  const [savedFile, setSavedFile] = useState<SavedFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { addFile, replaceFile } = useFiles();
@@ -81,7 +91,7 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
         if (ignore) return;
         setCode(file.content);
         setFileTitle(file.title);
-        setSavedFile({ title: file.title, content: file.content });
+        setSavedFile(toSavedFile(file));
       })
       .catch((err) => {
         if (!ignore) setFileError(getApiErrorMessage(err, 'Could not open this file.'));
@@ -104,7 +114,7 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
     try {
       const updated = await updateFile(id, { title, content: code });
       setFileTitle(updated.title);
-      setSavedFile({ title: updated.title, content: updated.content });
+      setSavedFile(toSavedFile(updated));
       replaceFile(id, updated);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Could not save your changes.'));
@@ -147,9 +157,12 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
     setTemporalResult(undefined);
     setSpatialResult(undefined);
     setLoading(true);
+    // The AI name describes the saved content, so only send it while the code is unchanged
+    const title =
+      savedFile?.content === code ? (savedFile.algorithmName ?? undefined) : undefined;
     try {
-        setTemporalResult(await analyzeTemporalComplexity({code, explain_ai: explainAI} as TemporalAnalysisPayload));
-        setSpatialResult(await analyzeSpatialComplexity({code, explain_ai: explainAI} as SpatialAnalysisPayload))
+        setTemporalResult(await analyzeTemporalComplexity({code, explain_ai: explainAI, title} as TemporalAnalysisPayload));
+        setSpatialResult(await analyzeSpatialComplexity({code, explain_ai: explainAI, title} as SpatialAnalysisPayload))
     } catch (err) {
       setError(getApiErrorMessage(err, 'Could not analyze your code.'));
     } finally {
@@ -242,7 +255,7 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
         defaultTitle={fileTitle}
         onSaved={(file) => {
           setFileTitle(file.title);
-          setSavedFile({ title: file.title, content: file.content });
+          setSavedFile(toSavedFile(file));
           addFile(file);
         }}
       />

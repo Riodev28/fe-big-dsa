@@ -22,6 +22,7 @@ export interface UserResult {
 export interface FileResult {
   id: string | null
   title: string
+  algorithm_name: string | null
   content: string
   user: UserResult
   created_at: string
