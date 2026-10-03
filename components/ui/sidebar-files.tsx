@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import GuardedLink from '@/components/guarded-link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { FileCode, FolderOpen, RotateCw, Trash2 } from 'lucide-react';
+import { FileCode, FolderOpen, Plus, RotateCw, Trash2 } from 'lucide-react';
 import { useFiles } from '@/components/files-provider';
+import { useUnsavedChanges } from '@/components/unsaved-changes-provider';
 import DeleteFileDialog from '@/components/ui/delete-file-dialog';
+import NewFileDialog from '@/components/ui/new-file-dialog';
 import { cn } from '@/lib/utils';
 import { FileResult } from '@/types/dto';
 
@@ -34,6 +36,14 @@ function fileKey(file: FileResult): string {
   return file.id ?? `${file.title}-${file.created_at}`;
 }
 
+function fileHref(id: string): string {
+  return `/big-o?file=${encodeURIComponent(id)}`;
+}
+
+// Matches the sidebar nav items so "New file" reads as a primary action, not a header icon
+const NEW_FILE_BUTTON_CLASS =
+  'flex items-center rounded-md border border-transparent px-2.5 py-2 text-sm text-zinc-500 transition-colors hover:cursor-pointer hover:border-zinc-800 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
+
 const ITEM_CLASS =
   'flex flex-col rounded-md border px-2.5 py-1.5 transition-colors';
 
@@ -49,7 +59,8 @@ export default function SidebarFiles({
   className,
   onNavigate,
 }: SidebarFilesProps) {
-  const { files, loading, error, refresh } = useFiles();
+  const { files, loading, error, refresh, addFile } = useFiles();
+  const { requestLeave } = useUnsavedChanges();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -57,6 +68,7 @@ export default function SidebarFiles({
   // Target is kept separate from `open` so the dialog text survives its close animation.
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [newFileOpen, setNewFileOpen] = useState(false);
 
   function confirmDelete(target: { id: string; title: string }) {
     setDeleteTarget(target);
@@ -68,14 +80,42 @@ export default function SidebarFiles({
     if (id === activeFileId) router.replace('/big-o');
   }
 
+  function handleCreated(file: FileResult) {
+    addFile(file);
+    if (!file.id) return;
+
+    const href = fileHref(file.id);
+    const openFile = () => {
+      router.push(href);
+      onNavigate?.();
+    };
+    // The new file is already listed, so declining to discard unsaved edits just keeps the current editor.
+    if (requestLeave(openFile)) openFile();
+  }
+
+  const newFileDialog = (
+    <NewFileDialog open={newFileOpen} onOpenChange={setNewFileOpen} onCreated={handleCreated} />
+  );
+
   if (collapsed) {
     return (
       <div
         data-slot="sidebar-files"
-        title={`Your files (${files.length})`}
-        className={cn('flex justify-center py-2 text-muted-foreground', className)}
+        className={cn('flex flex-col items-center gap-1 py-2 text-muted-foreground', className)}
       >
-        <FileCode className="h-4 w-4" />
+        <span title={`Your files (${files.length})`} className="p-1">
+          <FileCode className="h-4 w-4" />
+        </span>
+        <button
+          type="button"
+          onClick={() => setNewFileOpen(true)}
+          aria-label="New file"
+          title="New file"
+          className={cn(NEW_FILE_BUTTON_CLASS, 'justify-center')}
+        >
+          <Plus className="h-4 w-4 shrink-0" />
+        </button>
+        {newFileDialog}
       </div>
     );
   }
@@ -101,6 +141,15 @@ export default function SidebarFiles({
         )}
       </div>
 
+      <button
+        type="button"
+        onClick={() => setNewFileOpen(true)}
+        className={cn(NEW_FILE_BUTTON_CLASS, 'mb-1 gap-2.5')}
+      >
+        <Plus className="h-4 w-4 shrink-0" />
+        New file
+      </button>
+
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading && files.length === 0 ? (
           <FilesSkeleton />
@@ -120,7 +169,7 @@ export default function SidebarFiles({
             <FolderOpen className="h-5 w-5 text-muted-foreground/60" />
             <p className="text-xs text-muted-foreground">No files yet</p>
             <p className="text-[11px] text-muted-foreground/70">
-              Save code from the editor to see it here.
+              Create a new file, or save code from the editor.
             </p>
           </div>
         ) : (
@@ -151,7 +200,7 @@ export default function SidebarFiles({
                 <li key={fileKey(file)} className="group/file relative">
                   {file.id ? (
                     <GuardedLink
-                      href={`/big-o?file=${encodeURIComponent(file.id)}`}
+                      href={fileHref(file.id)}
                       title={file.title}
                       aria-current={isActive ? 'page' : undefined}
                       onClick={onNavigate}
@@ -194,6 +243,7 @@ export default function SidebarFiles({
         file={deleteTarget}
         onDeleted={handleDeleted}
       />
+      {newFileDialog}
     </section>
   );
 }
