@@ -3,6 +3,7 @@
 import {
   FlaskConical,
   GitBranch,
+  History,
   LayoutDashboard,
   Menu,
   PanelLeftClose,
@@ -20,7 +21,13 @@ import SidebarFiles from './sidebar-files';
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
   { icon: FlaskConical, label: 'Big-O Analyzer', href: '/big-o' },
+  { icon: History, label: 'History', href: '/analyses' },
 ];
+
+// Sections own their nested routes, e.g. /analyses/:id keeps "History" highlighted
+function isNavActive(pathName: string, href: string): boolean {
+  return href === '/' ? pathName === '/' : pathName === href || pathName.startsWith(`${href}/`);
+}
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -89,7 +96,7 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map(({ icon: Icon, label, href }) => {
-          const isActive = pathName === href;
+          const isActive = isNavActive(pathName, href);
           return (
             <GuardedLink
               href={href}

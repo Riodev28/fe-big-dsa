@@ -1,3 +1,5 @@
+import { AnalysisKind } from '@/types/dto';
+
 export interface TemporalAnalysisPayload {
     code: string;
     explain_ai: boolean;
@@ -28,3 +30,20 @@ export interface SaveFilePayload {
 }
 
 export type UpdateFilePayload = SaveFilePayload;
+
+export interface DashboardQuery {
+    kind?: AnalysisKind;
+}
+
+export interface DashboardTrendsQuery extends DashboardQuery {
+    /** 1 to 24, defaults to 6 on the backend */
+    months?: number;
+}
+
+export interface AnalysesQuery {
+    /** Omit to list both kinds */
+    kind?: AnalysisKind;
+    /** 1 to 100, defaults to 10 on the backend */
+    limit?: number;
+    offset?: number;
+}
