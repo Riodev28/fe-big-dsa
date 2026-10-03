@@ -19,6 +19,7 @@ import AISummaryGroup from '@/components/ui/ai-summary-group';
 import EditorHeader from '@/components/ui/code-editor-header';
 import SaveFileDialog from '@/components/ui/save-file-dialog';
 import DeleteFileDialog from '@/components/ui/delete-file-dialog';
+import ErrorAlert from '@/components/ui/error-alert';
 import { Button } from '@/components/ui/button';
 import { useFiles } from '@/components/files-provider';
 import { useUnsavedChangesGuard } from '@/components/unsaved-changes-provider';
@@ -150,7 +151,7 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
         setTemporalResult(await analyzeTemporalComplexity({code, explain_ai: explainAI} as TemporalAnalysisPayload));
         setSpatialResult(await analyzeSpatialComplexity({code, explain_ai: explainAI} as SpatialAnalysisPayload))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(getApiErrorMessage(err, 'Could not analyze your code.'));
     } finally {
       setLoading(false);
     }
@@ -246,15 +247,10 @@ export default function BigOAnalyzer({ fileId }: BigOAnalyzerProps) {
         }}
       />
 
-      {error && (
-        <div className="rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
       {/* Right panel */}
       <div className="flex w-full lg:w-72 flex-col gap-4 lg:overflow-y-auto">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+        <div className="flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+          {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
           <ComplexityDisplay
             complexity={timeComplexity}
             space={spaceComplexity}
