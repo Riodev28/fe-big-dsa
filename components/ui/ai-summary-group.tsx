@@ -42,7 +42,7 @@ function AISummaryEntry({
         <div className="flex flex-col gap-4">
           {sections.map(({ heading, body }, i) => (
             <div key={i}>
-              <p className="mb-1 text-xs font-semibold text-zinc-200">{heading}</p>
+              {heading && <p className="mb-1 text-xs font-semibold text-zinc-200">{heading}</p>}
               <p className="text-xs leading-relaxed text-zinc-400">{body}</p>
             </div>
           ))}
