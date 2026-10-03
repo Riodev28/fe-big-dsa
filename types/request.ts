@@ -3,11 +3,13 @@ import { AnalysisKind } from '@/types/dto';
 export interface TemporalAnalysisPayload {
     code: string;
     explain_ai: boolean;
+    title?: string;
 }
 
 export interface SpatialAnalysisPayload {
     code: string;
     explain_ai: boolean;
+    title?: string;
 }
 
 export interface LoginPayload extends Omit<UserPayload, 'username'> {
