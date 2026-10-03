@@ -3,9 +3,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Mirrors FileModel.title max_length in the backend.
-const FILENAME_MAX_LENGTH = 100;
+import { FILE_TITLE_MAX_LENGTH } from '@/consts/file';
 
 interface EditableFilenameProps {
   value: string;
@@ -45,7 +43,7 @@ export default function EditableFilename({ value, onChange, className }: Editabl
         aria-label="File name"
         autoFocus
         spellCheck={false}
-        maxLength={FILENAME_MAX_LENGTH}
+        maxLength={FILE_TITLE_MAX_LENGTH}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onFocus={(event) => event.target.select()}
