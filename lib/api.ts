@@ -1,6 +1,25 @@
-import { AuthResult, FileResult, SpatialAiResult, TemporalAiResult } from '@/types/dto';
-import { LoginPayload, RegisterPayload, SaveFilePayload, TemporalAnalysisPayload, UpdateFilePayload, UserPayload } from '@/types/request'
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import {
+  AnalysisDetailResult,
+  AnalysisPage,
+  AuthResult,
+  ComplexityTrendsResult,
+  DashboardSummaryResult,
+  FileResult,
+  SpatialAiResult,
+  TemporalAiResult,
+} from '@/types/dto';
+import {
+  AnalysesQuery,
+  DashboardQuery,
+  DashboardTrendsQuery,
+  LoginPayload,
+  RegisterPayload,
+  SaveFilePayload,
+  TemporalAnalysisPayload,
+  UpdateFilePayload,
+  UserPayload,
+} from '@/types/request'
+import axios, { AxiosError, GenericAbortSignal, InternalAxiosRequestConfig } from 'axios';
 import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/auth';
 
 const api = axios.create({
@@ -136,8 +155,13 @@ async function del(path: string): Promise<void> {
   await api.delete(path);
 }
 
-async function get<T>(path: string): Promise<T> {
-  const { data } = await api.get<T>(path);
+interface GetOptions {
+  params?: object;
+  signal?: GenericAbortSignal;
+}
+
+async function get<T>(path: string, { params, signal }: GetOptions = {}): Promise<T> {
+  const { data } = await api.get<T>(path, { params, signal });
   return data;
 }
 
@@ -183,4 +207,29 @@ export function updateFile(id: string, payload: UpdateFilePayload): Promise<File
 
 export function deleteFile(id: string): Promise<void> {
   return del(`/file/${encodeURIComponent(id)}`);
+}
+
+export function getDashboardSummary(
+  query: DashboardQuery = {},
+  signal?: GenericAbortSignal
+): Promise<DashboardSummaryResult> {
+  return get<DashboardSummaryResult>('/dashboard/summary', { params: query, signal });
+}
+
+export function getDashboardTrends(
+  query: DashboardTrendsQuery = {},
+  signal?: GenericAbortSignal
+): Promise<ComplexityTrendsResult> {
+  return get<ComplexityTrendsResult>('/dashboard/trends', { params: query, signal });
+}
+
+export function getAnalyses(
+  query: AnalysesQuery = {},
+  signal?: GenericAbortSignal
+): Promise<AnalysisPage> {
+  return get<AnalysisPage>('/analyses', { params: query, signal });
+}
+
+export function getAnalysis(id: string, signal?: GenericAbortSignal): Promise<AnalysisDetailResult> {
+  return get<AnalysisDetailResult>(`/analyses/${encodeURIComponent(id)}`, { signal });
 }
